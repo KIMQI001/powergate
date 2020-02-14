@@ -2,6 +2,7 @@ package client
 
 import (
 	dealsPb "github.com/textileio/fil-tools/deals/pb"
+	fpsPb "github.com/textileio/fil-tools/fps/pb"
 	asksPb "github.com/textileio/fil-tools/index/ask/pb"
 	minerPb "github.com/textileio/fil-tools/index/miner/pb"
 	slashingPb "github.com/textileio/fil-tools/index/slashing/pb"
@@ -18,6 +19,7 @@ type Client struct {
 	Deals      *Deals
 	Wallet     *Wallet
 	Reputation *Reputation
+	FPS        *FPS
 	conn       *grpc.ClientConn
 }
 
@@ -34,6 +36,7 @@ func NewClient(target string, opts ...grpc.DialOption) (*Client, error) {
 		Deals:      &Deals{client: dealsPb.NewAPIClient(conn)},
 		Wallet:     &Wallet{client: walletPb.NewAPIClient(conn)},
 		Reputation: &Reputation{client: reputationPb.NewAPIClient(conn)},
+		FPS:        &FPS{client: fpsPb.NewAPIClient(conn)},
 		conn:       conn,
 	}
 	return client, nil

@@ -21,10 +21,11 @@ clean:
 	rm -f .filecoin-build
 	rm -f .update-modules
 
+PARAMCACHE_PATH:=/var/tmp/fil-tools/filecoin-proof-parameters
 test: build
-	mkdir -p /var/tmp/filecoin-proof-parameters
+	mkdir -p $(PARAMCACHE_PATH)
 	cat build/proof-params/parameters.json | jq 'keys[]' | xargs touch
-	mv -n v20* /var/tmp/filecoin-proof-parameters
+	mv -n v20* $(PARAMCACHE_PATH)
 	rm v20* || true
-	go test -short -p 1 -v -count 1 ./... 
+	PARAMCACHE_PATH=$(PARAMCACHE_PATH) go test -short -p 1 ./... 
 .PHONY: test
