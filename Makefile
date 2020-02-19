@@ -20,6 +20,7 @@ build: .update-modules .filecoin-build
 clean:
 	rm -f .filecoin-build
 	rm -f .update-modules
+	git submodule deinit --all -f
 
 PARAMCACHE_PATH:=/var/tmp/fil-tools/filecoin-proof-parameters
 test: build
