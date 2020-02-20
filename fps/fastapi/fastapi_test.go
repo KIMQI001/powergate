@@ -3,6 +3,7 @@ package fastapi
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io/ioutil"
 	"math/big"
 	"math/rand"
@@ -17,6 +18,7 @@ import (
 	httpapi "github.com/ipfs/go-ipfs-http-client"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/ipfs/interface-go-ipfs-core/options"
+	"github.com/ipfs/interface-go-ipfs-core/path"
 	"github.com/ory/dockertest"
 	"github.com/stretchr/testify/require"
 	"github.com/textileio/fil-tools/deals"
@@ -74,9 +76,12 @@ func TestGet(t *testing.T) {
 
 	r := rand.New(rand.NewSource(22))
 	cid, data := addRandomFile(t, r, ipfs)
+
+	fmt.Println("doing test with cid ", cid.String())
 	err := fapi.Put(ctx, cid)
 	require.Nil(t, err)
-
+	require.Nil(t, ipfs.Pin().Rm(ctx, path.IpfsPath(cid)), options.Pin.RmRecursive(true))
+	require.Nil(t, ipfs.Block().Rm(ctx, path.IpfsPath(cid)))
 	t.Run("FromAPI", func(t *testing.T) {
 		r, err := fapi.Get(ctx, cid)
 		require.Nil(t, err)
@@ -190,7 +195,7 @@ func randomBytes(r *rand.Rand, size int) []byte {
 
 func addRandomFile(t *testing.T, r *rand.Rand, ipfs *httpapi.HttpApi) (cid.Cid, []byte) {
 	t.Helper()
-	data := randomBytes(r, 500)
+	data := randomBytes(r, 500*CantShards)
 	node, err := ipfs.Unixfs().Add(context.Background(), ipfsfiles.NewReaderFile(bytes.NewReader(data)), options.Unixfs.Pin(false))
 	require.Nil(t, err)
 

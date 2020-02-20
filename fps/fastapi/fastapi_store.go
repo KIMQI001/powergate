@@ -1,10 +1,12 @@
 package fastapi
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"time"
 
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
@@ -13,6 +15,7 @@ import (
 	iface "github.com/ipfs/interface-go-ipfs-core"
 	"github.com/ipfs/interface-go-ipfs-core/options"
 	"github.com/ipfs/interface-go-ipfs-core/path"
+	"github.com/klauspost/reedsolomon"
 	"github.com/textileio/fil-tools/deals"
 	ftypes "github.com/textileio/fil-tools/fps/types"
 )
@@ -21,6 +24,9 @@ var (
 	ErrAlreadyPinned = errors.New("cid already pinned")
 	ErrCantPin       = errors.New("couldn't pin data")
 	ErrNotStored     = errors.New("cid not stored")
+
+	CantShards = 10
+	CantParity = 2
 )
 
 func (i *Instance) Put(ctx context.Context, c cid.Cid) error {
@@ -78,33 +84,37 @@ func (i *Instance) storeInFIL(ctx context.Context, c cid.Cid) (ColdInfo, error) 
 	if err != nil {
 		return ci, fmt.Errorf("selecting miners to make the deal: %s", err)
 	}
-	r := ipldToFileTransform(ctx, i.ipfs.Dag(), c)
-	dataCid, result, err := i.dm.Store(ctx, i.info.WalletAddr, r, config, ci.Filecoin.Duration)
-	if err != nil {
-		return ci, err
-	}
-	ci.Filecoin.PayloadCID = dataCid
-
-	notDone := make(map[cid.Cid]struct{})
-	propcids := make([]cid.Cid, len(result))
-	ci.Filecoin.Proposals = make([]FilStorage, len(result))
-	for i, d := range result {
-		ci.Filecoin.Proposals[i] = FilStorage{
-			ProposalCid: d.ProposalCid,
-			Failed:      !d.Success,
+	rs, size := ipldToFileTransform(ctx, i.ipfs.Dag(), c)
+	for k, r := range rs {
+		dataCid, result, err := i.dm.Store(ctx, i.info.WalletAddr, r, config, ci.Filecoin.Duration)
+		if err != nil {
+			return ci, err
 		}
-		propcids[i] = d.ProposalCid
-		notDone[d.ProposalCid] = struct{}{}
-	}
+		ci.Filecoin.CarSize = size
 
-	chDi, err := i.dm.Watch(ctx, propcids)
-
-	for di := range chDi {
-		if di.StateID == storagemarket.StorageDealActive {
-			delete(notDone, di.ProposalCid)
+		notDone := make(map[cid.Cid]struct{})
+		propcids := make([]cid.Cid, len(result))
+		for i, d := range result {
+			ci.Filecoin.Proposals = append(ci.Filecoin.Proposals, FilStorage{
+				ProposalCid: d.ProposalCid,
+				Failed:      !d.Success,
+				ShardNumber: k,
+				ShardCid:    dataCid,
+			})
+			propcids[i] = d.ProposalCid
+			notDone[d.ProposalCid] = struct{}{}
 		}
-		if len(notDone) == 0 {
-			break
+		fmt.Printf("saving shard number %d with cid %s\n", k, dataCid)
+
+		chDi, err := i.dm.Watch(ctx, propcids)
+
+		for di := range chDi {
+			if di.StateID == storagemarket.StorageDealActive {
+				delete(notDone, di.ProposalCid)
+			}
+			if len(notDone) == 0 {
+				break
+			}
 		}
 	}
 	return ci, nil
@@ -127,7 +137,7 @@ func (i *Instance) pinToHotLayer(ctx context.Context, c cid.Cid) (HotInfo, error
 	return hi, nil
 }
 
-func ipldToFileTransform(ctx context.Context, dag iface.APIDagService, c cid.Cid) io.Reader {
+func ipldToFileTransform(ctx context.Context, dag iface.APIDagService, c cid.Cid) ([]io.Reader, int) {
 	r, w := io.Pipe()
 	go func() {
 		if err := car.WriteCar(ctx, dag, []cid.Cid{c}, w); err != nil {
@@ -135,7 +145,30 @@ func ipldToFileTransform(ctx context.Context, dag iface.APIDagService, c cid.Cid
 		}
 		w.Close()
 	}()
-	return r
+	all, err := ioutil.ReadAll(r)
+	checkErr(err)
+	fmt.Println("Size of total data: ", len(all))
+
+	enc, err := reedsolomon.New(CantShards, CantParity)
+	checkErr(err)
+	shards, err := enc.Split(all)
+	checkErr(err)
+	fmt.Printf("File split into %d data+parity shards with %d bytes/shard.\n", len(shards), len(shards[0]))
+	err = enc.Encode(shards)
+	checkErr(err)
+
+	readers := make([]io.Reader, len(shards))
+	for i, s := range shards {
+		readers[i] = bytes.NewReader(s)
+	}
+
+	return readers, len(all)
+}
+
+func checkErr(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
 
 func makeStorageConfig(ctx context.Context, ms ftypes.MinerSelector) ([]deals.StorageDealConfig, error) {

@@ -53,12 +53,15 @@ type ColdInfo struct {
 type FilInfo struct {
 	PayloadCID cid.Cid
 	Duration   uint64
+	CarSize    int
 	Proposals  []FilStorage
 }
 
 type FilStorage struct {
 	ProposalCid cid.Cid
 	Failed      bool
+	ShardNumber int
+	ShardCid    cid.Cid
 }
 
 type Info struct {
