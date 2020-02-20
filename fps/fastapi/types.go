@@ -51,10 +51,11 @@ type ColdInfo struct {
 }
 
 type FilInfo struct {
-	PayloadCID cid.Cid
-	Duration   uint64
-	CarSize    int
-	Proposals  []FilStorage
+	Duration     uint64
+	DataShards   int
+	ParityShards int
+	CarSize      int
+	Proposals    []FilStorage
 }
 
 type FilStorage struct {

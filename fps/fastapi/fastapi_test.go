@@ -3,6 +3,7 @@ package fastapi
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math/big"
@@ -70,25 +71,42 @@ func TestPut(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	ctx := context.Background()
-	ipfs, fapi, cls := newFastAPI(t)
-	defer cls()
+	matrix := []struct {
+		Name       string
+		CantShards int
+		CantParity int
+	}{
+		{CantShards: 5, CantParity: 5, Name: "2x"},
+	}
 
-	r := rand.New(rand.NewSource(22))
-	cid, data := addRandomFile(t, r, ipfs)
+	for _, tc := range matrix {
+		t.Run(tc.Name, func(t *testing.T) {
+			CantParity = tc.CantParity
+			CantShards = tc.CantShards
 
-	fmt.Println("doing test with cid ", cid.String())
-	err := fapi.Put(ctx, cid)
-	require.Nil(t, err)
-	require.Nil(t, ipfs.Pin().Rm(ctx, path.IpfsPath(cid)), options.Pin.RmRecursive(true))
-	require.Nil(t, ipfs.Block().Rm(ctx, path.IpfsPath(cid)))
-	t.Run("FromAPI", func(t *testing.T) {
-		r, err := fapi.Get(ctx, cid)
-		require.Nil(t, err)
-		fetched, err := ioutil.ReadAll(r)
-		require.Nil(t, err)
-		require.True(t, bytes.Equal(data, fetched))
-	})
+			ctx := context.Background()
+			ipfs, fapi, cls := newFastAPI(t)
+			defer cls()
+
+			r := rand.New(rand.NewSource(22))
+			cid, data := addRandomFile(t, r, ipfs)
+
+			fmt.Println("Data has Cid: ", cid.String(), " bytes")
+			err := fapi.Put(ctx, cid)
+			require.Nil(t, err)
+			require.Nil(t, ipfs.Pin().Rm(ctx, path.IpfsPath(cid)), options.Pin.RmRecursive(true))
+			require.Nil(t, ipfs.Block().Rm(ctx, path.IpfsPath(cid)))
+			shw, err := fapi.Show(cid)
+			kk, err := json.MarshalIndent(shw, "", " ")
+			require.Nil(t, err)
+			fmt.Println(string(kk))
+			re, err := fapi.Get(ctx, cid)
+			require.Nil(t, err)
+			fetched, err := ioutil.ReadAll(re)
+			require.Nil(t, err)
+			require.True(t, bytes.Equal(data, fetched))
+		})
+	}
 }
 
 func TestInfo(t *testing.T) {
@@ -155,7 +173,6 @@ func TestShow(t *testing.T) {
 		require.NotNil(t, s.Hot.Ipfs)
 		require.True(t, time.Now().After(s.Hot.Ipfs.Created))
 		require.NotNil(t, s.Cold.Filecoin)
-		require.True(t, s.Cold.Filecoin.PayloadCID.Defined())
 		require.Greater(t, s.Cold.Filecoin.Duration, uint64(0))
 		require.Equal(t, 1, len(s.Cold.Filecoin.Proposals))
 		p := s.Cold.Filecoin.Proposals[0]

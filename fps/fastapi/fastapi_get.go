@@ -34,13 +34,11 @@ func (i *Instance) get(ctx context.Context, oa ftypes.OpAuditer, c cid.Cid) (io.
 	info, _, err := i.getCidInfo(c)
 	checkErr(err)
 
-	fmt.Printf("seems that saved cid has %d shards\n", len(info.Cold.Filecoin.Proposals))
 	readers := make([]io.Reader, CantShards)
 	for k, sh := range info.Cold.Filecoin.Proposals {
 		if k >= CantShards {
 			break
 		}
-		fmt.Println("retrieving shard ", sh.ShardCid)
 		rc, err := i.dm.Retrieve(ctx, i.WalletAddr(), sh.ShardCid)
 		checkErr(err)
 		readers[k] = rc

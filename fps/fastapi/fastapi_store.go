@@ -90,6 +90,8 @@ func (i *Instance) storeInFIL(ctx context.Context, c cid.Cid) (ColdInfo, error) 
 		if err != nil {
 			return ci, err
 		}
+		ci.Filecoin.DataShards = CantShards
+		ci.Filecoin.ParityShards = CantParity
 		ci.Filecoin.CarSize = size
 
 		notDone := make(map[cid.Cid]struct{})
@@ -104,7 +106,7 @@ func (i *Instance) storeInFIL(ctx context.Context, c cid.Cid) (ColdInfo, error) 
 			propcids[i] = d.ProposalCid
 			notDone[d.ProposalCid] = struct{}{}
 		}
-		fmt.Printf("saving shard number %d with cid %s\n", k, dataCid)
+		fmt.Printf("Made deal for shard %d with PayloadCid %s\n", k, dataCid)
 
 		chDi, err := i.dm.Watch(ctx, propcids)
 
@@ -147,13 +149,13 @@ func ipldToFileTransform(ctx context.Context, dag iface.APIDagService, c cid.Cid
 	}()
 	all, err := ioutil.ReadAll(r)
 	checkErr(err)
-	fmt.Println("Size of total data: ", len(all))
+	fmt.Println("Size CAR transformation: ", len(all))
 
 	enc, err := reedsolomon.New(CantShards, CantParity)
 	checkErr(err)
 	shards, err := enc.Split(all)
 	checkErr(err)
-	fmt.Printf("File split into %d data+parity shards with %d bytes/shard.\n", len(shards), len(shards[0]))
+	fmt.Printf("File split into %d data shards & %d parity shards with %d bytes/shard.\n", CantShards, CantParity, len(shards[0]))
 	err = enc.Encode(shards)
 	checkErr(err)
 
