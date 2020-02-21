@@ -16,6 +16,7 @@ import (
 	"github.com/ipfs/interface-go-ipfs-core/options"
 	"github.com/ipfs/interface-go-ipfs-core/path"
 	"github.com/klauspost/reedsolomon"
+	"github.com/logrusorgru/aurora"
 	"github.com/textileio/fil-tools/deals"
 	ftypes "github.com/textileio/fil-tools/fps/types"
 )
@@ -106,7 +107,7 @@ func (i *Instance) storeInFIL(ctx context.Context, c cid.Cid) (ColdInfo, error) 
 			propcids[i] = d.ProposalCid
 			notDone[d.ProposalCid] = struct{}{}
 		}
-		fmt.Printf("Made deal for shard %d with PayloadCid %s\n", k, dataCid)
+		fmt.Printf(aurora.Sprintf(aurora.Red("Made deal for shard %d with PayloadCid %s\n"), k, dataCid))
 
 		chDi, err := i.dm.Watch(ctx, propcids)
 
@@ -119,6 +120,7 @@ func (i *Instance) storeInFIL(ctx context.Context, c cid.Cid) (ColdInfo, error) 
 			}
 		}
 	}
+	fmt.Println()
 	return ci, nil
 }
 
@@ -149,15 +151,16 @@ func ipldToFileTransform(ctx context.Context, dag iface.APIDagService, c cid.Cid
 	}()
 	all, err := ioutil.ReadAll(r)
 	checkErr(err)
-	fmt.Println("Size CAR transformation: ", len(all))
+	fmt.Printf(aurora.Sprintf(aurora.Yellow("Size CAR transformation: %d bytes\n"), len(all)))
 
 	start := time.Now()
-	fmt.Println("Starting Reed-Solomon transformation...")
+	fmt.Printf(aurora.Sprintf(aurora.Yellow("Starting Reed-Solomon transformation...\n")))
+
 	enc, err := reedsolomon.New(CantShards, CantParity)
 	checkErr(err)
 	shards, err := enc.Split(all)
 	checkErr(err)
-	fmt.Printf("File split into %d data shards & %d parity shards with %d bytes/shard.\n", CantShards, CantParity, len(shards[0]))
+	fmt.Printf(aurora.Sprintf(aurora.Yellow("File split into %d data shards & %d parity shards with %d bytes/shard.\n"), CantShards, CantParity, len(shards[0])))
 	err = enc.Encode(shards)
 	checkErr(err)
 
@@ -165,7 +168,7 @@ func ipldToFileTransform(ctx context.Context, dag iface.APIDagService, c cid.Cid
 	for i, s := range shards {
 		readers[i] = bytes.NewReader(s)
 	}
-	fmt.Printf("Finished in %.2f ms\n", float64(time.Since(start).Microseconds())/float64(1000))
+	fmt.Printf(aurora.Sprintf(aurora.Yellow("Finished in %.2f ms\n\n"), float64(time.Since(start).Microseconds())/float64(1000)))
 
 	return readers, len(all)
 }

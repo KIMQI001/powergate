@@ -20,6 +20,7 @@ import (
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/ipfs/interface-go-ipfs-core/options"
 	"github.com/ipfs/interface-go-ipfs-core/path"
+	"github.com/logrusorgru/aurora"
 	"github.com/ory/dockertest"
 	"github.com/stretchr/testify/require"
 	"github.com/textileio/fil-tools/deals"
@@ -77,7 +78,7 @@ func TestGet(t *testing.T) {
 		CantParity  int
 		SuccessProb float64
 	}{
-		{CantShards: 3, CantParity: 5, SuccessProb: 0.8},
+		{CantShards: 6, CantParity: 3, SuccessProb: 0.999},
 	}
 
 	for _, tc := range matrix {
@@ -93,7 +94,7 @@ func TestGet(t *testing.T) {
 			r := rand.New(rand.NewSource(22))
 			cid, data := addRandomFile(t, r, ipfs)
 
-			fmt.Println("Original data has Cid: ", cid.String(), "bytes")
+			fmt.Printf(aurora.Sprintf(aurora.Green("Original data has Cid: %s\n\n"), cid.String()))
 			err := fapi.Put(ctx, cid)
 			require.Nil(t, err)
 			require.Nil(t, ipfs.Pin().Rm(ctx, path.IpfsPath(cid)), options.Pin.RmRecursive(true))
@@ -101,8 +102,8 @@ func TestGet(t *testing.T) {
 			shw, err := fapi.Show(cid)
 			kk, err := json.MarshalIndent(shw, "", " ")
 			require.Nil(t, err)
-			fmt.Println("Cid info:")
-			fmt.Println(string(kk))
+			fmt.Printf(aurora.Sprintf(aurora.BrightCyan("Cid info:\n")))
+			fmt.Printf(aurora.Sprintf(aurora.Cyan("%s\n\n"), kk))
 			re, err := fapi.Get(ctx, cid)
 			require.Nil(t, err)
 			fetched, err := ioutil.ReadAll(re)

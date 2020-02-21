@@ -12,6 +12,7 @@ import (
 	blocks "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-car"
 	ipfsfiles "github.com/ipfs/go-ipfs-files"
+	"github.com/logrusorgru/aurora"
 
 	dstest "github.com/ipfs/go-merkledag/test"
 	iface "github.com/ipfs/interface-go-ipfs-core"
@@ -69,7 +70,7 @@ func (i *Instance) get(ctx context.Context, oa ftypes.OpAuditer, c cid.Cid) (io.
 		return nil, fmt.Errorf("Can't reconstruct data, %d (<%d) shards available for reconstruction", cant, CantShards)
 	}
 
-	fmt.Printf("Reconstructing data using %d data shards and %d parity shards...\n", dataShardsUsed, parityShardsUsed)
+	fmt.Printf(aurora.Sprintf(aurora.Magenta("Reconstructing data using %d data shards and %d parity shards...\n"), dataShardsUsed, parityShardsUsed))
 	start := time.Now()
 	if parityShardsUsed > 0 {
 		enc, err := reedsolomon.New(CantShards, CantParity)
@@ -80,7 +81,7 @@ func (i *Instance) get(ctx context.Context, oa ftypes.OpAuditer, c cid.Cid) (io.
 		}
 	}
 
-	fmt.Printf("Reconstructing data took %.2f ms\n", float64(time.Since(start).Microseconds())/float64(1000))
+	fmt.Printf(aurora.Sprintf(aurora.Magenta("Reconstructing data took %.2f ms\n"), float64(time.Since(start).Microseconds())/float64(1000)))
 
 	readers2 := make([]io.Reader, CantShards)
 	for k, r := range readers {
@@ -116,4 +117,8 @@ func (fk *fakeStore) Put(b blocks.Block) error {
 	_, err := fk.ipfs.Block().Put(context.Background(), bytes.NewReader(b.RawData()))
 	checkErr(err)
 	return nil
+}
+
+func Message(format string, args ...interface{}) {
+	fmt.Println(aurora.Sprintf(aurora.BrightBlack("> "+format), args...))
 }

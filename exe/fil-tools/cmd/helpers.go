@@ -10,10 +10,6 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-func Message(format string, args ...interface{}) {
-	fmt.Println(aurora.Sprintf(aurora.BrightBlack("> "+format), args...))
-}
-
 func Success(format string, args ...interface{}) {
 	fmt.Println(aurora.Sprintf(aurora.Cyan("> Success! %s"),
 		aurora.Sprintf(aurora.BrightBlack(format), args...)))
