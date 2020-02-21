@@ -72,17 +72,19 @@ func TestPut(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	matrix := []struct {
-		Name       string
-		CantShards int
-		CantParity int
+		Name        string
+		CantShards  int
+		CantParity  int
+		SuccessProb float64
 	}{
-		{CantShards: 5, CantParity: 5, Name: "2x"},
+		{CantShards: 10, CantParity: 5, SuccessProb: 0.6, Name: "2x"},
 	}
 
 	for _, tc := range matrix {
 		t.Run(tc.Name, func(t *testing.T) {
 			CantParity = tc.CantParity
 			CantShards = tc.CantShards
+			SuccessProb = tc.SuccessProb
 
 			ctx := context.Background()
 			ipfs, fapi, cls := newFastAPI(t)
@@ -91,7 +93,7 @@ func TestGet(t *testing.T) {
 			r := rand.New(rand.NewSource(22))
 			cid, data := addRandomFile(t, r, ipfs)
 
-			fmt.Println("Data has Cid: ", cid.String(), " bytes")
+			fmt.Println("Original data has Cid: ", cid.String(), "bytes")
 			err := fapi.Put(ctx, cid)
 			require.Nil(t, err)
 			require.Nil(t, ipfs.Pin().Rm(ctx, path.IpfsPath(cid)), options.Pin.RmRecursive(true))
@@ -99,6 +101,7 @@ func TestGet(t *testing.T) {
 			shw, err := fapi.Show(cid)
 			kk, err := json.MarshalIndent(shw, "", " ")
 			require.Nil(t, err)
+			fmt.Println("Cid info:")
 			fmt.Println(string(kk))
 			re, err := fapi.Get(ctx, cid)
 			require.Nil(t, err)

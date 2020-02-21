@@ -151,6 +151,8 @@ func ipldToFileTransform(ctx context.Context, dag iface.APIDagService, c cid.Cid
 	checkErr(err)
 	fmt.Println("Size CAR transformation: ", len(all))
 
+	start := time.Now()
+	fmt.Println("Starting Reed-Solomon transformation...")
 	enc, err := reedsolomon.New(CantShards, CantParity)
 	checkErr(err)
 	shards, err := enc.Split(all)
@@ -163,6 +165,7 @@ func ipldToFileTransform(ctx context.Context, dag iface.APIDagService, c cid.Cid
 	for i, s := range shards {
 		readers[i] = bytes.NewReader(s)
 	}
+	fmt.Printf("Finished in %d ms\n", time.Since(start).Milliseconds())
 
 	return readers, len(all)
 }
