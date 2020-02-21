@@ -71,14 +71,16 @@ func (i *Instance) get(ctx context.Context, oa ftypes.OpAuditer, c cid.Cid) (io.
 
 	fmt.Printf("Reconstructing data using %d data shards and %d parity shards...\n", dataShardsUsed, parityShardsUsed)
 	start := time.Now()
-	enc, err := reedsolomon.New(CantShards, CantParity)
-	checkErr(err)
-	err = enc.ReconstructData(readers)
-	if err != nil {
-		return nil, fmt.Errorf("reconstructing data failed: %s", err)
+	if parityShardsUsed > 0 {
+		enc, err := reedsolomon.New(CantShards, CantParity)
+		checkErr(err)
+		err = enc.ReconstructData(readers)
+		if err != nil {
+			return nil, fmt.Errorf("reconstructing data failed: %s", err)
+		}
 	}
 
-	fmt.Printf("Reconstructing data took %dms\n", time.Since(start).Milliseconds())
+	fmt.Printf("Reconstructing data took %.2f ms\n", float64(time.Since(start).Microseconds())/float64(1000))
 
 	readers2 := make([]io.Reader, CantShards)
 	for k, r := range readers {

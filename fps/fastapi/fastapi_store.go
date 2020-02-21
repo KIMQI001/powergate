@@ -165,7 +165,7 @@ func ipldToFileTransform(ctx context.Context, dag iface.APIDagService, c cid.Cid
 	for i, s := range shards {
 		readers[i] = bytes.NewReader(s)
 	}
-	fmt.Printf("Finished in %d ms\n", time.Since(start).Milliseconds())
+	fmt.Printf("Finished in %.2f ms\n", float64(time.Since(start).Microseconds())/float64(1000))
 
 	return readers, len(all)
 }

@@ -77,11 +77,11 @@ func TestGet(t *testing.T) {
 		CantParity  int
 		SuccessProb float64
 	}{
-		{CantShards: 10, CantParity: 5, SuccessProb: 0.6, Name: "2x"},
+		{CantShards: 3, CantParity: 5, SuccessProb: 0.8},
 	}
 
 	for _, tc := range matrix {
-		t.Run(tc.Name, func(t *testing.T) {
+		t.Run(fmt.Sprintf("Reed-Solomon simulation %d/%d %.2f", tc.CantShards, tc.CantParity, tc.SuccessProb), func(t *testing.T) {
 			CantParity = tc.CantParity
 			CantShards = tc.CantShards
 			SuccessProb = tc.SuccessProb
