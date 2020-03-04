@@ -14,10 +14,10 @@ require (
 	github.com/containerd/continuity v0.0.0-20200107194136-26c1120b8d41 // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
-	github.com/filecoin-project/go-address v0.0.0-20200107215422-da8eea2842b5
+	github.com/filecoin-project/go-address v0.0.2-0.20200218010043-eb9bb40ed5be
 	github.com/filecoin-project/go-fil-markets v0.0.0-20200206024724-973498b060e3
 	github.com/filecoin-project/go-sectorbuilder v0.0.2-0.20200203173614-42d67726bb62
-	github.com/filecoin-project/lotus v0.2.8-0.20200212194405-7dc40c45168d
+	github.com/filecoin-project/lotus v0.2.9-0.20200224163046-bde3f86ccc4e
 	github.com/golang/protobuf v1.3.4
 	github.com/google/go-cmp v0.4.0
 	github.com/google/uuid v1.1.1
@@ -34,6 +34,7 @@ require (
 	github.com/ipfs/go-ipfs-files v0.0.6
 	github.com/ipfs/go-ipfs-http-client v0.0.5
 	github.com/ipfs/go-ipld-cbor v0.0.5-0.20200204214505-252690b78669
+	github.com/ipfs/go-ipld-format v0.0.2
 	github.com/ipfs/go-log v1.0.2 // indirect
 	github.com/ipfs/go-log/v2 v2.0.2
 	github.com/ipfs/interface-go-ipfs-core v0.2.6
@@ -64,7 +65,5 @@ require (
 	google.golang.org/grpc v1.27.1
 	gopkg.in/yaml.v2 v2.2.7 // indirect
 )
-
-replace github.com/coreos/go-systemd => github.com/coreos/go-systemd/v22 v22.0.0
 
 replace github.com/filecoin-project/filecoin-ffi => ./extern/filecoin-ffi
