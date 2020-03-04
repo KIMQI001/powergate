@@ -75,6 +75,10 @@ type Server struct {
 	slashingService   *slashing.Service
 	fpaService        *fpaGrpc.Service
 
+	fpaManager *manager.Manager
+	jobStore   *jsonjobstore.JobStore
+	sched      *scheduler.Scheduler
+
 	grpcServer   *grpc.Server
 	grpcWebProxy *http.Server
 
@@ -103,6 +107,9 @@ func NewServer(conf Config) (*Server, error) {
 	var masterAddr address.Address
 	if conf.Embedded {
 		c, cls, err = lotus.NewEmbedded()
+		if err != nil {
+			return nil, fmt.Errorf("creating the embedded network: %s", err)
+		}
 		masterAddr, err = c.WalletDefaultAddress(context.Background())
 		if err != nil {
 			return nil, fmt.Errorf("getting default address: %s", err)
@@ -163,9 +170,10 @@ func NewServer(conf Config) (*Server, error) {
 
 	cl := filcold.New(reptop.New(rm, ai), dm, ipfs.Dag())
 	hl := coreipfs.New(ipfs)
-	jobstore := jsonjobstore.New(txndstr.Wrap(ds, "fpa/scheduler/jsonjobstore"))
-	sched := scheduler.New(jobstore, hl, cl)
-	fpamanager, err := manager.New(txndstr.Wrap(ds, "fpa/manager"), wm, sched, hl)
+	jobStore := jsonjobstore.New(txndstr.Wrap(ds, "fpa/scheduler/jsonjobstore"))
+	sched := scheduler.New(jobStore, hl, cl)
+
+	fpaManager, err := manager.New(txndstr.Wrap(ds, "fpa/manager"), wm, sched)
 	if err != nil {
 		return nil, fmt.Errorf("creating fpa instance: %s", err)
 	}
@@ -176,7 +184,7 @@ func NewServer(conf Config) (*Server, error) {
 	askService := ask.NewService(ai)
 	minerService := miner.NewService(mi)
 	slashingService := slashing.NewService(si)
-	fpaService := fpaGrpc.NewService(fpamanager)
+	fpaService := fpaGrpc.NewService(fpaManager, hl)
 
 	grpcServer := grpc.NewServer(conf.GrpcServerOpts...)
 
@@ -221,6 +229,10 @@ func NewServer(conf Config) (*Server, error) {
 		minerService:      minerService,
 		slashingService:   slashingService,
 		fpaService:        fpaService,
+
+		fpaManager: fpaManager,
+		sched:      sched,
+		jobStore:   jobStore,
 
 		grpcServer:   grpcServer,
 		grpcWebProxy: grpcWebProxy,
@@ -303,6 +315,18 @@ func (s *Server) Close() {
 		s.grpcServer.Stop()
 	case <-stopped:
 		t.Stop()
+	}
+	if err := s.fpaManager.Close(); err != nil {
+		log.Errorf("closing fpa manager: %s", err)
+	}
+	if err := s.sched.Close(); err != nil {
+		log.Errorf("closing fpa scheduler: %s", err)
+	}
+	if err := s.jobStore.Close(); err != nil {
+		log.Errorf("closing scheduler jobstore: %s", err)
+	}
+	if err := s.rm.Close(); err != nil {
+		log.Errorf("closing reputation module: %s", err)
 	}
 	if err := s.ai.Close(); err != nil {
 		log.Errorf("closing ask index: %s", err)
