@@ -15,9 +15,9 @@ require (
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/filecoin-project/go-address v0.0.2-0.20200218010043-eb9bb40ed5be
-	github.com/filecoin-project/go-fil-markets v0.0.0-20200206024724-973498b060e3
+	github.com/filecoin-project/go-fil-markets v0.0.0-20200114015428-74d100f305f8
 	github.com/filecoin-project/go-sectorbuilder v0.0.2-0.20200203173614-42d67726bb62
-	github.com/filecoin-project/lotus v0.2.9-0.20200224163046-bde3f86ccc4e
+	github.com/filecoin-project/lotus v0.2.10
 	github.com/golang/protobuf v1.3.4
 	github.com/google/go-cmp v0.4.0
 	github.com/google/uuid v1.1.1
@@ -52,11 +52,13 @@ require (
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/ory/dockertest v3.3.5+incompatible
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rs/cors v1.7.0 // indirect
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.5.1
+	github.com/whyrusleeping/cbor-gen v0.0.0-20200206220010-03c9665e2a66 // indirect
 	go.opencensus.io v0.22.3
 	golang.org/x/crypto v0.0.0-20200117160349-530e935923ad // indirect
 	golang.org/x/net v0.0.0-20191003171128-d98b1b443823 // indirect
@@ -67,3 +69,5 @@ require (
 )
 
 replace github.com/filecoin-project/filecoin-ffi => ./extern/filecoin-ffi
+
+replace github.com/golangci/golangci-lint => github.com/golangci/golangci-lint v1.18.0

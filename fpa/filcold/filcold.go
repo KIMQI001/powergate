@@ -84,7 +84,7 @@ func (fc *FilCold) waitForDeals(ctx context.Context, res []deals.StoreResult) ([
 	}
 	for di := range chDi {
 		// ToDo: check state coverage, changes return since deals can fail
-		if di.StateID == storagemarket.StorageDealActive {
+		if di.StateID == storagemarket.DealComplete {
 			delete(notDone, di.ProposalCid)
 		}
 		if len(notDone) == 0 {
